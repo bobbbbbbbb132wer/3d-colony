@@ -11,6 +11,7 @@
     "check": "tsc --noEmit"
   },
   "dependencies": {
+    "@babylonjs/gui": "^9.30.0",
     "@babylonjs/havok": "^1.3.14",
     "@babylonjs/loaders": "^9.30.0"
   },

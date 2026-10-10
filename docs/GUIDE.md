@@ -6,7 +6,7 @@
 | src/config.ts | All the numbers you can tweak                    |
 | src/sim/      | The game's brain: data and rules (no 3D)         |
 | src/render/   | The game's eyes: draws the data in 3D            |
-| src/ui/       | Buttons and menus                                |
+| src/gui/       | Buttons and menus                                |
 | src/physics/  | Falling, bouncing, collisions                    |
 | src/save/     | Save and load                                    |
 | src/assets/   | Drop models, textures, sounds here               |
@@ -27,7 +27,13 @@ This keeps saving, speed controls and bug-fixing simple.
 **Add a new model:** put `thing.glb` in src/assets/models, then call `loadModel(scene, 'thing')`.
 **Change map size:** edit `mapSize` in src/config.ts.
 **Add a new tile type:** add it to src/sim/tile.ts, then give it a colour in src/render/grid.ts.
-**Add a new button:** edit src/ui/ui.ts.
+**Add a new button:** edit src/gui/ui.ts.
 
 ## Before you save your work
 Run `npm run check` and `npm run format`. Then commit.
+
+## Build menu
+- Press B to open or close it (Esc also closes).
+- Add a building: add one line to BUILDINGS in src/sim/buildings.ts.
+- Change the layout (columns and rows): BUILD_MENU in src/config.ts.
+- Test keys (temporary, src/core/debugKeys.ts): G = +50 of every resource, U = unlock everything.

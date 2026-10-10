@@ -38,3 +38,12 @@ export const audio = byName(
     eager: true,
   }) as Record<string, string>,
 )
+
+// UI icons (e.g. building icons). Used from code: icons.campfire -> data URL
+export const icons = byName(
+  import.meta.glob('./ui/icons/*.{png,webp,svg}', {
+    query: '?url',
+    import: 'default',
+    eager: true,
+  }) as Record<string, string>,
+)
