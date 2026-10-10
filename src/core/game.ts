@@ -10,7 +10,7 @@ import { initDebugKeys } from './debugKeys'
 export async function startGame() {
   const world = createWorld()
   const view = await createScene(document.getElementById('app')!)
-  initUI(document.getElementById('ui')!, world)
+  initUI(document.getElementById('ui')!, world, view.engine, view.scene)
   initDebugKeys(world)
   startLoop(world, view)
 }

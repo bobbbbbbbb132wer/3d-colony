@@ -7,7 +7,6 @@ import { Color4 } from '@babylonjs/core/Maths/math.color'
 import { Vector3 } from '@babylonjs/core/Maths/math.vector'
 import { createCameras } from './camera'
 import { createGrid } from './grid'
-import { addTestCampfire } from './testCampfire'
 
 export interface View {
   engine: Engine
@@ -29,7 +28,6 @@ export async function createScene(container: HTMLElement): Promise<View> {
 
   const cameras = createCameras(scene, canvas)
   createGrid(scene)
-  addTestCampfire(scene).catch((error) => console.error('Campfire failed to load:', error))
 
   window.addEventListener('resize', () => engine.resize())
   return { engine, scene, cameras }

@@ -1,3 +1,6 @@
+// WHAT THIS FILE DOES
+// Takes a picture of each building's real model (side-on, transparent background)
+// and returns it as an embedded image, so the menu needs no image files.
 import type { Engine } from '@babylonjs/core/Engines/engine'
 import '@babylonjs/core/Engines/Extensions/engine.renderTarget'
 import '@babylonjs/core/Misc/dumpTools'
@@ -9,24 +12,25 @@ import { HemisphericLight } from '@babylonjs/core/Lights/hemisphericLight'
 import { DirectionalLight } from '@babylonjs/core/Lights/directionalLight'
 import { Color4 } from '@babylonjs/core/Maths/math.color'
 import { Vector3 } from '@babylonjs/core/Maths/math.vector'
-import type { BuildingDef } from './iconDefs'
+import type { IconDef } from './iconDefs'
 
 async function renderIcon(
   engine: Engine,
-  def: BuildingDef,
+  def: IconDef,
   size: number,
   angled: boolean,
 ): Promise<string> {
   const scene = new Scene(engine)
   scene.clearColor = new Color4(0, 0, 0, 0) // transparent background
 
-  def.build(scene)
+  await def.build(scene)
   scene.meshes.forEach((m) => m.computeWorldMatrix(true))
 
-  // Bounding box of everything, so every icon fills its slot evenly
+  // Bounding box of the real geometry only (skips the empty root node)
   let min = new Vector3(Infinity, Infinity, Infinity)
   let max = new Vector3(-Infinity, -Infinity, -Infinity)
   for (const m of scene.meshes) {
+    if (m.getTotalVertices() === 0) continue
     const b = m.getBoundingInfo().boundingBox
     min = Vector3.Minimize(min, b.minimumWorld)
     max = Vector3.Maximize(max, b.maximumWorld)
@@ -50,13 +54,13 @@ async function renderIcon(
   cam.orthoTop = half
   cam.orthoBottom = -half
   cam.minZ = 0.1
-  cam.maxZ = 100
+  cam.maxZ = 200
 
   // Same lighting for every icon
   const hemi = new HemisphericLight('h', new Vector3(0.2, 1, -0.4), scene)
-  hemi.intensity = 0.8
+  hemi.intensity = 0.9
   const dir = new DirectionalLight('d', new Vector3(-0.4, -0.6, 0.7), scene)
-  dir.intensity = 0.6
+  dir.intensity = 0.7
 
   await new Promise<void>((res) => scene.executeWhenReady(() => res()))
   const url = await CreateScreenshotUsingRenderTargetAsync(
@@ -74,12 +78,16 @@ async function renderIcon(
 // Returns { buildingId: base64 PNG data URL }
 export async function generateIcons(
   engine: Engine,
-  defs: BuildingDef[],
+  defs: IconDef[],
   opts: { size?: number; angled?: boolean } = {},
 ): Promise<Record<string, string>> {
   const out: Record<string, string> = {}
   for (const def of defs) {
-    out[def.id] = await renderIcon(engine, def, opts.size ?? 256, opts.angled ?? false)
+    try {
+      out[def.id] = await renderIcon(engine, def, opts.size ?? 256, opts.angled ?? false)
+    } catch (err) {
+      console.error(`icon failed for ${def.id}:`, err)
+    }
   }
   return out
 }

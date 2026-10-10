@@ -8,6 +8,7 @@ import { createHud } from './hud/hud'
 import type { Engine } from '@babylonjs/core/Engines/engine'
 import type { Scene } from '@babylonjs/core/scene'
 import { initBuildGui } from './buildGui'
+import { initPlacement } from '../render/placement'
 
 export function initUI(root: HTMLElement, world: World, engine: Engine, scene: Scene) {
   createFpsCounter(root)
@@ -45,13 +46,15 @@ export function initUI(root: HTMLElement, world: World, engine: Engine, scene: S
   document.addEventListener('pointerlockchange', update)
 
   // Build menu (created after the hint so it draws on top)
+  const placement = initPlacement(engine, scene, world)
   initBuildGui(engine, scene, (id) => {
+    placement.start(id)
     window.dispatchEvent(new CustomEvent('buildingpicked', { detail: id }))
   })
   window.addEventListener('buildingpicked', (e) => {
     const id = (e as CustomEvent<string>).detail
     const name = BUILDINGS.find((b) => b.id === id)?.name ?? id
-    message = `Selected: ${name} (placing is not built yet)`
+    message = `Selected: ${name} (click to place, R rotate, Esc cancel)`
     update()
     window.clearTimeout(messageTimer)
     messageTimer = window.setTimeout(() => {
