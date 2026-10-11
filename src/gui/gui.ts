@@ -23,9 +23,11 @@ export function initUI(root: HTMLElement, world: World, engine: Engine, scene: S
   let mode = 'rts'
   let message = ''
   let messageTimer = 0
+  let note = '' // status from placement / terrain tools
 
   const update = () => {
     if (message) hint.textContent = message
+    else if (note) hint.textContent = note
     else if (mode === 'rts') {
       hint.textContent =
         'WASD move | Q/E rotate | Scroll zoom | Right-drag orbit | Shift fast | B build | F free-fly'
@@ -47,6 +49,10 @@ export function initUI(root: HTMLElement, world: World, engine: Engine, scene: S
   // Build menu (created after the hint so it draws on top)
   const placement = initPlacement(engine, scene, world)
   initResourceGui(engine, scene, world)
+  window.addEventListener('placementstatus', (e) => {
+    note = (e as CustomEvent<string>).detail
+    update()
+  })
   initBuildGui(engine, scene, (id) => {
     placement.start(id)
     window.dispatchEvent(new CustomEvent('buildingpicked', { detail: id }))
@@ -54,7 +60,7 @@ export function initUI(root: HTMLElement, world: World, engine: Engine, scene: S
   window.addEventListener('buildingpicked', (e) => {
     const id = (e as CustomEvent<string>).detail
     const name = BUILDINGS.find((b) => b.id === id)?.name ?? id
-    message = `Selected: ${name} (click to place, R rotate, Esc cancel)`
+    message = `Selected: ${name} (click to place, R rotate, V foundation, T wireframe, Esc cancel)`
     update()
     window.clearTimeout(messageTimer)
     messageTimer = window.setTimeout(() => {

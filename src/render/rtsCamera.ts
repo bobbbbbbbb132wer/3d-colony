@@ -9,6 +9,7 @@ import { FreeCamera } from '@babylonjs/core/Cameras/freeCamera'
 import { Vector3 } from '@babylonjs/core/Maths/math.vector'
 import type { Scene } from '@babylonjs/core/scene'
 import { CONFIG } from '../config'
+import { getTerrain, heightAt, WORLD_SIZE } from '../sim/terrain'
 
 const toRadians = (degrees: number) => (degrees * Math.PI) / 180
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value))
@@ -17,15 +18,22 @@ export function createRtsCamera(scene: Scene, canvas: HTMLCanvasElement) {
   const camera = new FreeCamera('rtsCamera', Vector3.Zero(), scene)
   camera.inputs.clear() // we handle all input ourselves below
   camera.minZ = 0.1
-  camera.maxZ = 1000
+  camera.maxZ = 1200
 
   // "goal" is where we want the camera to be. "now" is what you see (it glides to the goal).
-  const goal = { x: 0, z: 0, yaw: 0, pitch: CONFIG.cameraStartPitch, zoom: CONFIG.cameraStartZoom }
+  const goal = {
+    x: 0,
+    y: 0,
+    z: 0,
+    yaw: 0,
+    pitch: CONFIG.cameraStartPitch,
+    zoom: CONFIG.cameraStartZoom,
+  }
   const now = { ...goal }
 
   const keys = new Set<string>()
   const focus = new Vector3()
-  const halfMap = (CONFIG.mapSize * CONFIG.tileSize) / 2
+  const halfMap = (WORLD_SIZE * CONFIG.tileSize) / 2 - 2
   let enabled = true
   let orbiting = false
 
@@ -99,22 +107,27 @@ export function createRtsCamera(scene: Scene, canvas: HTMLCanvasElement) {
     goal.z = clamp(goal.z, -halfMap, halfMap)
 
     // Glide toward the goal (same feel at any frame rate)
-    const t = 1 - Math.exp(-CONFIG.cameraSmoothing * dt)
-    now.x += (goal.x - now.x) * t
-    now.z += (goal.z - now.z) * t
-    now.yaw += (goal.yaw - now.yaw) * t
-    now.pitch += (goal.pitch - now.pitch) * t
-    now.zoom += (goal.zoom - now.zoom) * t
+    const k = 1 - Math.exp(-CONFIG.cameraSmoothing * dt)
+    now.x += (goal.x - now.x) * k
+    now.z += (goal.z - now.z) * k
+    now.yaw += (goal.yaw - now.yaw) * k
+    now.pitch += (goal.pitch - now.pitch) * k
+    now.zoom += (goal.zoom - now.zoom) * k
+
+    // Follow the ground height so hills don't swallow the camera (smoothed)
+    const t = getTerrain()
+    const groundY = t ? heightAt(t, now.x, now.z) : 0
+    now.y += (groundY - now.y) * (1 - Math.exp(-4 * dt))
 
     // Place the camera on its orbit around the focus point
     const pitch = toRadians(now.pitch)
     const flat = Math.cos(pitch) * now.zoom
     camera.position.set(
       now.x - Math.sin(now.yaw) * flat,
-      Math.sin(pitch) * now.zoom,
+      now.y + Math.sin(pitch) * now.zoom,
       now.z - Math.cos(now.yaw) * flat,
     )
-    focus.set(now.x, 0, now.z)
+    focus.set(now.x, now.y, now.z)
     camera.setTarget(focus)
   })
 

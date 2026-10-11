@@ -117,7 +117,11 @@ export function heightAt(t: Terrain, x: number, z: number): number {
   const h10 = t.heights[j * s + i + 1]
   const h01 = t.heights[(j + 1) * s + i]
   const h11 = t.heights[(j + 1) * s + i + 1]
-  return h00 * (1 - u) * (1 - v) + h10 * u * (1 - v) + h01 * (1 - u) * v + h11 * u * v
+  // The ground mesh splits every tile into two triangles along the corner (1,0)-(0,1), so use
+  // the same triangles here. Models, trees and the ghost then sit exactly ON the visible ground
+  // instead of sinking into it on slopes.
+  if (u + v <= 1) return h00 + u * (h10 - h00) + v * (h01 - h00)
+  return h11 + (1 - u) * (h01 - h11) + (1 - v) * (h10 - h11)
 }
 
 /** First tile (corner index) of a footprint. */

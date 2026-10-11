@@ -3,7 +3,7 @@
 
 export const CONFIG = {
   /** How many tiles wide and tall the map is. */
-  mapSize: 32,
+  mapSize: 128,
 
   /** How big one tile is in the 3D world. */
   tileSize: 1,

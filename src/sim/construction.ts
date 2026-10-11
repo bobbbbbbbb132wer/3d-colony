@@ -17,6 +17,10 @@ export interface Site extends Footprint {
   rot: number
   total: number
   left: number
+  /** Height the base sits at (set when placed on terrain). */
+  y?: number
+  /** Foundation used: level, raised or natural. */
+  foundation?: string
 }
 
 export interface Construction {
