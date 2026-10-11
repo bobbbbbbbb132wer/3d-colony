@@ -30,6 +30,7 @@ import {
   type Site,
 } from '../sim/construction'
 import type { World } from '../sim/world'
+import { footprintBuildable, footprintHeight, getTerrain, raycastGround } from '../sim/terrain'
 import { consume, reserve } from '../sim/resources'
 
 interface Model {
@@ -78,6 +79,16 @@ async function loadBuildingModel(scene: Scene, id: string, width: number): Promi
 // Snap to the tile grid: odd sizes centre on a tile, even sizes sit on a grid line.
 const snap = (v: number, size: number) => (size % 2 === 0 ? Math.round(v) : Math.floor(v) + 0.5)
 
+// Height of the ground under a footprint, and whether it is flat and free to build on.
+function groundY(fp: Footprint) {
+  const t = getTerrain()
+  return t ? footprintHeight(t, fp) : 0
+}
+function canBuildAt(fp: Footprint) {
+  const t = getTerrain()
+  return t ? footprintBuildable(t, fp) : true
+}
+
 export function initPlacement(engine: Engine, scene: Scene, world: World) {
   const con = createConstruction()
   const visuals = new Map<number, SiteVisual>()
@@ -102,6 +113,13 @@ export function initPlacement(engine: Engine, scene: Scene, world: World) {
     const cam = scene.activeCamera
     if (!cam) return null
     const ray = scene.createPickingRay(scene.pointerX, scene.pointerY, Matrix.Identity(), cam)
+    const terrain = getTerrain()
+    if (terrain) {
+      const o = ray.origin
+      const d = ray.direction
+      const hit = raycastGround(terrain, o.x, o.y, o.z, d.x, d.y, d.z)
+      return hit ? new Vector3(hit.x, hit.y, hit.z) : null
+    }
     if (Math.abs(ray.direction.y) < 1e-6) return null
     const t = -ray.origin.y / ray.direction.y
     if (t < 0) return null
@@ -154,10 +172,10 @@ export function initPlacement(engine: Engine, scene: Scene, world: World) {
     const fp = footprintAt(active.id, active.rot, p)
     active.fp = fp
     active.model.holder.setEnabled(true)
-    active.model.holder.position.set(fp.x, 0, fp.z)
+    active.model.holder.position.set(fp.x, groundY(fp), fp.z)
     active.model.holder.rotation.y = (active.rot * Math.PI) / 2
     const def = BUILDINGS.find((b) => b.id === active!.id)
-    tint(active, !!def && canAfford(world, def) && !overlaps(con, fp))
+    tint(active, !!def && canAfford(world, def) && !overlaps(con, fp) && canBuildAt(fp))
   }
 
   async function start(id: string) {
@@ -192,7 +210,7 @@ export function initPlacement(engine: Engine, scene: Scene, world: World) {
 
   function makeSiteVisual(site: Site) {
     const root = new TransformNode(`site_${site.uid}`, scene)
-    root.position.set(site.x, 0, site.z)
+    root.position.set(site.x, groundY(site), site.z)
 
     const box = MeshBuilder.CreateBox('site', { width: site.w, depth: site.d, height: 1 }, scene)
     box.parent = root
@@ -232,10 +250,14 @@ export function initPlacement(engine: Engine, scene: Scene, world: World) {
   async function spawn(site: Site) {
     try {
       const model = await loadBuildingModel(scene, site.id, metaOf(site.id).w)
-      model.holder.position.set(site.x, 0, site.z)
+      model.holder.position.set(site.x, groundY(site), site.z)
       model.holder.rotation.y = (site.rot * Math.PI) / 2
       if (site.id === 'campfire') {
-        addCampfireEffects(scene, [...model.meshes, ...model.nodes], new Vector3(site.x, 0, site.z))
+        addCampfireEffects(
+          scene,
+          [...model.meshes, ...model.nodes],
+          new Vector3(site.x, groundY(site), site.z),
+        )
       }
     } catch (err) {
       console.error(`could not finish building ${site.id}:`, err)
