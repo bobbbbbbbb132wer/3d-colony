@@ -3,6 +3,7 @@
 // "is it unlocked?" and "can we afford it?". Pure data, no 3D in here.
 // To add a building: add one line to BUILDINGS below.
 import type { World } from './world'
+import { availableOf } from './resources'
 
 export interface ResourceDef {
   name: string
@@ -81,7 +82,5 @@ export function isUnlocked(world: World, id: string) {
 }
 
 export function canAfford(world: World, def: BuildingDef) {
-  return Object.entries(def.cost).every(
-    ([resource, need]) => (world.resources[resource] ?? 0) >= need,
-  )
+  return Object.entries(def.cost).every(([resource, need]) => availableOf(world, resource) >= need)
 }

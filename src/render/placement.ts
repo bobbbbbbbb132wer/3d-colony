@@ -30,6 +30,7 @@ import {
   type Site,
 } from '../sim/construction'
 import type { World } from '../sim/world'
+import { consume, reserve } from '../sim/resources'
 
 interface Model {
   holder: TransformNode
@@ -246,9 +247,7 @@ export function initPlacement(engine: Engine, scene: Scene, world: World) {
     if (!active || menuHover || !active.fp || !active.valid) return false
     const def = BUILDINGS.find((b) => b.id === active!.id)
     if (!def) return false
-    for (const [r, n] of Object.entries(def.cost)) {
-      world.resources[r] = (world.resources[r] ?? 0) - n
-    }
+    reserve(def.cost)
     const site = addSite(con, active.id, active.fp, active.rot, buildSeconds(active.id))
     makeSiteVisual(site)
     active.valid = null // re-check next frame: we may not afford another one now
@@ -291,6 +290,8 @@ export function initPlacement(engine: Engine, scene: Scene, world: World) {
     const done = tick(con, dt)
     for (const s of con.sites) updateSiteVisual(s)
     for (const s of done) {
+      const cost = BUILDINGS.find((b) => b.id === s.id)?.cost
+      if (cost) consume(world, cost)
       visuals.get(s.uid)?.root.dispose()
       visuals.delete(s.uid)
       void spawn(s)

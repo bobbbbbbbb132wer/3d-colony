@@ -15,6 +15,7 @@ import { BUILDINGS as ICON_DEFS } from './iconDefs'
 import { BUILDINGS as REAL, RESOURCES, type BuildingDef } from '../sim/buildings'
 import { CATEGORIES, buildSeconds, metaOf } from '../sim/buildingMeta'
 import { THEME } from './theme'
+import { setHover } from '../core/uiHover'
 
 const W = 780 // panel size (in UI units)
 const H = 470
@@ -69,8 +70,7 @@ export async function initBuildGui(engine: Engine, scene: Scene, onSelect: (id: 
   panel.cornerRadius = 10
   panel.isPointerBlocker = true
   ui.addControl(panel)
-  const hover = (over: boolean) =>
-    window.dispatchEvent(new CustomEvent('buildmenuhover', { detail: over }))
+  const hover = (over: boolean) => setHover('build', over)
   panel.onPointerEnterObservable.add(() => hover(true))
   panel.onPointerOutObservable.add(() => hover(false))
 

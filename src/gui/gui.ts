@@ -4,16 +4,15 @@ import type { World } from '../sim/world'
 import { BUILDINGS } from '../sim/buildings'
 import { createFpsCounter } from './hud/fpsCounter'
 import { createVsyncToggle } from './hud/vsyncToggle'
-import { createHud } from './hud/hud'
 import type { Engine } from '@babylonjs/core/Engines/engine'
 import type { Scene } from '@babylonjs/core/scene'
 import { initBuildGui } from './buildGui'
 import { initPlacement } from '../render/placement'
+import { initResourceGui } from './resourceGui'
 
 export function initUI(root: HTMLElement, world: World, engine: Engine, scene: Scene) {
   createFpsCounter(root)
   createVsyncToggle(root)
-  createHud(root, world)
 
   const hint = document.createElement('div')
   hint.style.cssText =
@@ -47,6 +46,7 @@ export function initUI(root: HTMLElement, world: World, engine: Engine, scene: S
 
   // Build menu (created after the hint so it draws on top)
   const placement = initPlacement(engine, scene, world)
+  initResourceGui(engine, scene, world)
   initBuildGui(engine, scene, (id) => {
     placement.start(id)
     window.dispatchEvent(new CustomEvent('buildingpicked', { detail: id }))
